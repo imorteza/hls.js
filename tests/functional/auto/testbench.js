@@ -69,7 +69,7 @@ function objectAssign (target, firstSource) {
   return to;
 }
 
-function startStream (streamUrl, config, callback) {
+function startStream (streamUrl, config, callback, autoplay) {
   var Hls = window.Hls;
   if (!Hls) {
     throw new Error('Hls not installed');
@@ -86,19 +86,21 @@ function startStream (streamUrl, config, callback) {
       console.log(navigator.userAgent);
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, function () {
-        var playPromise = video.play();
-        if (playPromise) {
-          playPromise.catch(function (error) {
-            console.log('video.play() failed with error:', error);
-            if (error.name === 'NotAllowedError') {
-              console.log('Attempting to play with video muted');
-              video.muted = true;
-              return video.play();
-            }
-          });
-        }
-      });
+      if (autoplay !== false) {
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          var playPromise = video.play();
+          if (playPromise) {
+            playPromise.catch(function (error) {
+              console.log('video.play() failed with error:', error);
+              if (error.name === 'NotAllowedError') {
+                console.log('Attempting to play with video muted');
+                video.muted = true;
+                return video.play();
+              }
+            });
+          }
+        });
+      }
       hls.on(Hls.Events.ERROR, function (event, data) {
         if (data.fatal) {
           console.log('hlsjs fatal error :' + data.details);
